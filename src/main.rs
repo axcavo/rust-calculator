@@ -1,16 +1,23 @@
-use std::io;
-
-use crate::{ast::evaluate, parser::Parser, token::Token};
+use crate::{ast::evaluate, parser::Parser};
 
 mod token;
 mod scanning;
 mod ast;
 mod parser;
+mod errors;
 
 fn main() {
     let mut input = String::new();
-    io::stdin().read_line(&mut input).expect("Failed to read the line");
-    let tokens: Vec<Token> = scanning::scan(input);
-    let mut parser = Parser::new(tokens);
-    println!("{:#?}", evaluate(&parser.parse().unwrap()));
+    std::io::stdin().read_line(&mut input).expect("Failed to read line");
+
+    match scanning::scan(input) {
+        Ok(tokens) => {
+            let mut parser = Parser::new(tokens);
+            match parser.parse() {
+                Some(expr) => println!("Result: {}", evaluate(&expr)),
+                None => eprintln!("Error: Failed to parse expression"),
+            }
+        }
+        Err(e) => eprintln!("Lexing error: {}", e),
+    }
 }
