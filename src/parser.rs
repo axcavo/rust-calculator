@@ -20,7 +20,6 @@ impl Parser {
         self.expression()
     }
 
-    // expression → term (("+" | "-") term)* ;
     fn expression(&mut self) -> Option<Expr> {
         let mut expr = self.term()?;
 
@@ -37,7 +36,6 @@ impl Parser {
         Some(expr)
     }
 
-    // term → factor (("*" | "/") factor)* ;
     fn term(&mut self) -> Option<Expr> {
         let mut expr = self.factor()?;
 
@@ -54,12 +52,10 @@ impl Parser {
         Some(expr)
     }
 
-    // factor → unary ;
     fn factor(&mut self) -> Option<Expr> {
         self.unary()
     }
 
-    // unary → ("-" | "+") unary | primary ;
     fn unary(&mut self) -> Option<Expr> {
         if self.match_operator(&[OperatorType::Add, OperatorType::Subtract]) {
             let operator = self.previous().operator_type().unwrap();
@@ -73,7 +69,6 @@ impl Parser {
         self.primary()
     }
 
-    // primary → number | "(" expression ")" ;
     fn primary(&mut self) -> Option<Expr> {
         let token = self.peek();
 
@@ -95,8 +90,6 @@ impl Parser {
             _ => None,
         }
     }
-
-    // Helpers
 
     fn peek(&self) -> &Token {
         self.tokens.get(self.current).unwrap()
