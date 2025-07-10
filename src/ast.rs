@@ -7,6 +7,10 @@ pub enum Expr {
         operator: OperatorType,
         right: Box<Expr>,
     },
+    Unary {
+        operator: OperatorType,
+        right: Box<Expr>
+    },
     Grouping(Box<Expr>),
     Literal(f64),
 }
@@ -24,6 +28,18 @@ pub fn evaluate(expr: &Expr) -> f64 {
                 OperatorType::Subtract => left_val - right_val,
                 OperatorType::Multiply => left_val * right_val,
                 OperatorType::Divide => left_val / right_val,
+            }
+        }
+        Expr::Unary { operator, right } => {
+            let right_val = evaluate(right);
+            match operator {
+                OperatorType::Add => 0.0 + right_val,
+                OperatorType::Subtract => 0.0 - right_val,
+                OperatorType::Multiply | OperatorType::Divide => {
+                    debug_assert!(false, "Unary received invalid operator: {:?}", operator);
+                    unreachable!()
+                }
+                
             }
         }
     }

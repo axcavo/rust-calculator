@@ -1,5 +1,7 @@
-use crate::{ast::Expr, token::{OperatorType, Token, TokenType}};
-
+use crate::{
+    ast::Expr,
+    token::{OperatorType, Token, TokenType},
+};
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -8,13 +10,17 @@ pub struct Parser {
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
-        Parser { tokens, current: 0 }
+        Parser {
+            tokens,
+            current: 0,
+        }
     }
 
     pub fn parse(&mut self) -> Option<Expr> {
         self.expression()
     }
 
+    // expression → term (("+" | "-") term)* ;
     fn expression(&mut self) -> Option<Expr> {
         let mut expr = self.term()?;
 
@@ -31,29 +37,50 @@ impl Parser {
         Some(expr)
     }
 
+    // term → factor (("*" | "/") factor)* ;
     fn term(&mut self) -> Option<Expr> {
         let mut expr = self.factor()?;
 
         while self.match_operator(&[OperatorType::Multiply, OperatorType::Divide]) {
             let operator = self.previous().operator_type().unwrap();
             let right = self.factor()?;
-            expr = Expr::Binary { 
-                left: Box::new(expr), 
-                operator, 
-                right: Box::new(right), 
+            expr = Expr::Binary {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
             };
         }
 
         Some(expr)
     }
 
+    // factor → unary ;
     fn factor(&mut self) -> Option<Expr> {
+        self.unary()
+    }
+
+    // unary → ("-" | "+") unary | primary ;
+    fn unary(&mut self) -> Option<Expr> {
+        if self.match_operator(&[OperatorType::Add, OperatorType::Subtract]) {
+            let operator = self.previous().operator_type().unwrap();
+            let right = self.unary()?;
+            return Some(Expr::Unary {
+                operator,
+                right: Box::new(right),
+            });
+        }
+
+        self.primary()
+    }
+
+    // primary → number | "(" expression ")" ;
+    fn primary(&mut self) -> Option<Expr> {
         let token = self.peek();
 
         match &token.r#type {
             TokenType::Operand => {
                 let value = token.lexeme.parse::<f64>().ok()?;
-                self.advance(); 
+                self.advance();
                 Some(Expr::Literal(value))
             }
             TokenType::LeftParen => {
@@ -62,13 +89,14 @@ impl Parser {
                 if self.peek().r#type != TokenType::RightParen {
                     return None;
                 }
-                self.advance();
+                self.advance(); // consume ')'
                 Some(Expr::Grouping(Box::new(expr)))
             }
-            _ => None, 
+            _ => None,
         }
     }
 
+    // Helpers
 
     fn peek(&self) -> &Token {
         self.tokens.get(self.current).unwrap()
@@ -90,13 +118,12 @@ impl Parser {
 
     fn advance(&mut self) -> &Token {
         if !self.is_at_end() {
-            self.current+=1;
+            self.current += 1;
         }
-        return self.previous();
+        self.previous()
     }
 
     fn is_at_end(&self) -> bool {
-        return self.peek().r#type == TokenType::Eof;
+        self.peek().r#type == TokenType::Eof
     }
-
 }
